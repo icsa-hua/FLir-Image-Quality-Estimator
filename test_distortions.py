@@ -70,7 +70,7 @@ if __name__ == "__main__":
             img = img.astype(np.float32)
 
             # FLIQE score
-            quality_score = fliqe.assess_image(dist['func'](frame))
+            quality_score = fliqe.estimate_image_quality(dist['func'](frame))
             dist['recent_scores'].append(quality_score)
             smoothed_avg = np.mean(dist['recent_scores'])
 

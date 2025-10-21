@@ -30,7 +30,7 @@ class FLIQE:
         self.smoothed_avg = 0
 
 
-    def assess_image(self, img):
+    def estimate_image_quality(self, img):
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         img_tensor = transform(img)
         img_tensor = img_tensor.unsqueeze(0).to(device)
