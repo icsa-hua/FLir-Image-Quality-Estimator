@@ -17,14 +17,11 @@ transform = transforms.Compose([
 
 
 class FLIQE:
-    def __init__(self, encoder_model_path='models/resnet50_128_out.pth', quality_model_path='models/best_binary_classifier.pth', threshold=0.5):
+    def __init__(self, quality_model_path='models/encoder_with_binary_head.pth'):
         encoder_model = IQAEncoder(feature_dim=128, model_name='resnet50').to(device)
-        encoder_model.load_state_dict(torch.load(encoder_model_path, map_location=device))
-        encoder_model.eval()
         self.quality_model = DistortionBinaryClassifier(iqa_encoder=encoder_model).to(device)
         self.quality_model.load_state_dict(torch.load(quality_model_path, map_location=device))
         self.quality_model.eval()
-        self.threshold = threshold
 
     def estimate_image_quality(self, img):
         """Estimate raw image quality score."""
@@ -34,11 +31,22 @@ class FLIQE:
         with torch.no_grad():
             quality_score = self.quality_model.get_quality_score(img_tensor)
         return float(quality_score.item())
+    
+    def get_color(self, score):
+        '''Get color based on quality score using gradient from 0.0 (red) to 1.0 (green).'''
+        score = max(0.0, min(1.0, score))
+        # Interpolate RGB values
+        red = int((1 - score) * 255)
+        green = int(score * 255)
+        blue = 0
+        
+        return (blue, green, red)
+        
 
 
 class OnlineFLIQE(FLIQE):
-    def __init__(self, encoder_model_path='models/resnet50_128_out.pth', quality_model_path='models/best_binary_classifier.pth', smoothing_window=300, threshold=0.5):
-        super().__init__(encoder_model_path, quality_model_path, threshold)
+    def __init__(self, quality_model_path='models/encoder_with_binary_head.pth', smoothing_window=300):
+        super().__init__(quality_model_path)
         self.smoothing_window = smoothing_window
         self.sessions = {}
 

@@ -7,14 +7,14 @@ from fliqe import OnlineFLIQE
 
 
 if __name__ == "__main__":
-    fliqe = OnlineFLIQE(smoothing_window=150, threshold=0.5)
+    fliqe = OnlineFLIQE(smoothing_window=150)
     # Get screen size (Windows)
     user32 = ctypes.windll.user32
     screen_width = user32.GetSystemMetrics(0)
     screen_height = user32.GetSystemMetrics(1)
     print(f"Screen size: {screen_width}x{screen_height}")
 
-    cap = cv2.VideoCapture("./data/2.MP4")
+    cap = cv2.VideoCapture("./data/1.MP4")
     ret, frame = cap.read()
     print(f"Video frame size: {frame.shape[1]}x{frame.shape[0]}")
     # Use a larger size, e.g., 80% of original
@@ -36,7 +36,7 @@ if __name__ == "__main__":
         "Underexposure": {'func':lambda img: Underexposure(factor=0.3)(img)[0]},
         "Compression": {'func':lambda img: Compression(quality=5)(img)[0]},
         "Ghosting": {'func':lambda img: Ghosting(shift=10, alpha=0.6)(img)[0]},
-        "Blackout": {'func':lambda img: Blackout()(img)[0]},
+        # "Blackout": {'func':lambda img: Blackout()(img)[0]},
         "Noise": {'func':lambda img: GaussianNoise(mean=0, std=25)(img)[0]},
         # "Color Distortion": lambda img: ColorDistortion()(img)[0],
         # "Glare": lambda img: Glare()(img)[0],
@@ -44,7 +44,7 @@ if __name__ == "__main__":
         # "Freeze": lambda img: FrameFreeze()(img)[0],
         # "Obstruction": lambda img: Obstruction()(img)[0],
         # "Crop": {'func':lambda img: Crop()(img)[0]}
-        # "Aliasing": {'func':lambda img: Aliasing(factor=4)(img)[0]}
+        "Aliasing": {'func':lambda img: Aliasing(factor=4)(img)[0]}
     }
     for k in distortions.keys():
         fliqe.create_session(k)
@@ -72,7 +72,7 @@ if __name__ == "__main__":
             # FLIQE score
             quality_score = fliqe.estimate_smoothed_quality(dist['func'](frame), session_id=dist_name)
 
-            color = (0, 255, 0) if fliqe.get_smoothed_quality(dist_name) >= fliqe.threshold else (0, 0, 255)
+            color = fliqe.get_color(fliqe.get_smoothed_quality(dist_name))
             # Draw black rectangles as background for text
             overlay = annotated.copy()
             cv2.rectangle(overlay, (5, 10), (350, 100), (0, 0, 0), -1)
@@ -115,7 +115,7 @@ if __name__ == "__main__":
         )
         cv2.imshow("Distorted Frames", combined_frame_padded)
         if cv2.waitKey(1) & 0xFF == ord('q'):
-            # cv2.imwrite("distorted_frames.png", combined_frame_padded)  # Uncomment to save the image
+            cv2.imwrite("distorted_frames.png", combined_frame_padded)  # Uncomment to save the image
             break
         
         # if processed_frames == 600:

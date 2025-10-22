@@ -5,7 +5,7 @@ A tool for evaluating and analyzing image quality from FLIR thermal cameras.
 
 Download pre-trained models:
 - [FLIQE Encoder Model](https://github.com/icsa-hua/FLir-Image-Quality-Estimator/releases/download/uploading_models/resnet50_128_out.pth)
-- [FLIQE Binary Classifier Model](https://github.com/icsa-hua/FLir-Image-Quality-Estimator/releases/download/uploading_models/best_binary_classifier.pth)
+- [FLIQE Binary Classifier Model](https://github.com/icsa-hua/FLir-Image-Quality-Estimator/releases/download/uploading_models/binary_head.pth)
 
 ## How it works
 

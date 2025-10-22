@@ -88,11 +88,12 @@ class SupConLoss(nn.Module):
     
 
 class DistortionBinaryClassifier(nn.Module):
-    def __init__(self, iqa_encoder: IQAEncoder, hidden_dims=(128, 64)):
+    def __init__(self, iqa_encoder: IQAEncoder, hidden_dims=(128, 64), dropout_p=0.3):
         super().__init__()
-        self.iqa_encoder = iqa_encoder
+        self.iqa_encoder = iqa_encoder        
         for param in self.iqa_encoder.parameters():
             param.requires_grad = False  # Freeze encoder
+        self.iqa_encoder.eval()
 
         input_dim = self.iqa_encoder.projection_head[-1].out_features
 
@@ -102,6 +103,7 @@ class DistortionBinaryClassifier(nn.Module):
             layers.append(nn.Linear(last_dim, hdim))
             layers.append(nn.ReLU(inplace=True))
             layers.append(nn.BatchNorm1d(hdim))
+            # layers.append(nn.Dropout(p=dropout_p))  # <-- drop out for regularization
             last_dim = hdim
 
         # Final layer: output logits for binary classification
