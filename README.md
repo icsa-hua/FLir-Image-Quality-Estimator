@@ -3,6 +3,10 @@ A tool for evaluating and analyzing image quality from FLIR thermal cameras.
 
 ![Distorted Frames with Scores](pics/distorted_frames_with_scores.png)
 
+Download pre-trained models:
+- [FLIQE Encoder Model](https://github.com/icsa-hua/FLir-Image-Quality-Estimator/releases/download/uploading_models/resnet50_128_out.pth)
+- [FLIQE Binary Classifier Model](https://github.com/icsa-hua/FLir-Image-Quality-Estimator/releases/download/uploading_models/best_binary_classifier.pth)
+
 ## How it works
 
 FLIQE employs a sophisticated machine learning approach to assess the quality of thermal images from FLIR cameras. The system works through several key stages:

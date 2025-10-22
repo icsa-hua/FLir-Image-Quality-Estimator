@@ -17,28 +17,53 @@ transform = transforms.Compose([
 
 
 class FLIQE:
-    def __init__(self, encoder_model_path='models/resnet50_128_out.pth', quality_model_path='models/best_binary_classifier.pth', smoothing_window=300, threshold=0.5):
+    def __init__(self, encoder_model_path='models/resnet50_128_out.pth', quality_model_path='models/best_binary_classifier.pth', threshold=0.5):
         encoder_model = IQAEncoder(feature_dim=128, model_name='resnet50').to(device)
         encoder_model.load_state_dict(torch.load(encoder_model_path, map_location=device))
         encoder_model.eval()
         self.quality_model = DistortionBinaryClassifier(iqa_encoder=encoder_model).to(device)
         self.quality_model.load_state_dict(torch.load(quality_model_path, map_location=device))
         self.quality_model.eval()
-        self.smoothing_window = smoothing_window
         self.threshold = threshold
-        self.recent_scores = deque(maxlen=smoothing_window)  # only stores last N values
-        self.smoothed_avg = 0
-
 
     def estimate_image_quality(self, img):
+        """Estimate raw image quality score."""
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         img_tensor = transform(img)
         img_tensor = img_tensor.unsqueeze(0).to(device)
         with torch.no_grad():
             quality_score = self.quality_model.get_quality_score(img_tensor)
-        quality_score = float(quality_score.item())
-        self.recent_scores.append(quality_score)
-        self.smoothed_avg = np.mean(self.recent_scores)
+        return float(quality_score.item())
 
-        return quality_score
+
+class OnlineFLIQE(FLIQE):
+    def __init__(self, encoder_model_path='models/resnet50_128_out.pth', quality_model_path='models/best_binary_classifier.pth', smoothing_window=300, threshold=0.5):
+        super().__init__(encoder_model_path, quality_model_path, threshold)
+        self.smoothing_window = smoothing_window
+        self.sessions = {}
+
+    def create_session(self, session_id):
+        self.sessions[session_id] = {
+            'recent_scores': deque(maxlen=self.smoothing_window),
+            'smoothed_avg': 0
+        }
+
+    def estimate_smoothed_quality(self, img: np.ndarray, session_id: str):
+        if session_id not in self.sessions:
+            raise ValueError(f"Session {session_id} not found.")
+        
+        quality_score = self.estimate_image_quality(img)
+        session_data = self.sessions[session_id]
+        session_data['recent_scores'].append(quality_score)
+        session_data['smoothed_avg'] = np.mean(session_data['recent_scores'])
+        return session_data['smoothed_avg']
+
+    def get_smoothed_quality(self, session_id):
+        if session_id not in self.sessions:
+            return 0
+        return self.sessions[session_id]['smoothed_avg']
+
+    def remove_session(self, session_id):
+        self.sessions.pop(session_id, None)
+
     

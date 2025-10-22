@@ -3,11 +3,11 @@ import ctypes
 import cv2
 import torch
 from distortions import *
-from fliqe import FLIQE
+from fliqe import OnlineFLIQE
 
 
 if __name__ == "__main__":
-    fliqe = FLIQE(smoothing_window=150, threshold=0.5)
+    fliqe = OnlineFLIQE(smoothing_window=150, threshold=0.5)
     # Get screen size (Windows)
     user32 = ctypes.windll.user32
     screen_width = user32.GetSystemMetrics(0)
@@ -29,32 +29,32 @@ if __name__ == "__main__":
     out = cv2.VideoWriter("distortions.mp4", fourcc, fps, (frame_width * grid_size, frame_height * grid_size))
     cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
     distortions = {
-        "Original": {'func':lambda img: img, 'recent_scores': deque(maxlen=fliqe.smoothing_window)},
-        "Lens Blur": {'func':lambda img: LensBlur(ksize=11)(img)[0], 'recent_scores': deque(maxlen=fliqe.smoothing_window)},
-        "Motion Blur": {'func':lambda img: MotionBlur(degree=15, angle=45)(img)[0], 'recent_scores': deque(maxlen=fliqe.smoothing_window)},        
-        "Overexposure": {'func':lambda img: Overexposure(factor=2.5)(img)[0], 'recent_scores': deque(maxlen=fliqe.smoothing_window)},
-        "Underexposure": {'func':lambda img: Underexposure(factor=0.3)(img)[0], 'recent_scores': deque(maxlen=fliqe.smoothing_window)},
-        "Compression": {'func':lambda img: Compression(quality=5)(img)[0], 'recent_scores': deque(maxlen=fliqe.smoothing_window)},
-        "Ghosting": {'func':lambda img: Ghosting(shift=10, alpha=0.6)(img)[0], 'recent_scores': deque(maxlen=fliqe.smoothing_window)},
-        "Blackout": {'func':lambda img: Blackout()(img)[0], 'recent_scores': deque(maxlen=fliqe.smoothing_window)},
-        "Noise": {'func':lambda img: GaussianNoise(mean=0, std=25)(img)[0], 'recent_scores': deque(maxlen=fliqe.smoothing_window)},
-        
+        "Original": {'func':lambda img: img},
+        "Lens Blur": {'func':lambda img: LensBlur(ksize=11)(img)[0]},
+        "Motion Blur": {'func':lambda img: MotionBlur(degree=15, angle=45)(img)[0]},
+        "Overexposure": {'func':lambda img: Overexposure(factor=2.5)(img)[0]},
+        "Underexposure": {'func':lambda img: Underexposure(factor=0.3)(img)[0]},
+        "Compression": {'func':lambda img: Compression(quality=5)(img)[0]},
+        "Ghosting": {'func':lambda img: Ghosting(shift=10, alpha=0.6)(img)[0]},
+        "Blackout": {'func':lambda img: Blackout()(img)[0]},
+        "Noise": {'func':lambda img: GaussianNoise(mean=0, std=25)(img)[0]},
         # "Color Distortion": lambda img: ColorDistortion()(img)[0],
         # "Glare": lambda img: Glare()(img)[0],
-        
         # "Flicker": lambda img: Flicker(factor=1.8)(img)[0],
         # "Freeze": lambda img: FrameFreeze()(img)[0],
         # "Obstruction": lambda img: Obstruction()(img)[0],
-        # "Crop": {'func':lambda img: Crop()(img)[0], 'recent_scores': deque(maxlen=fliqe.smoothing_window)}
-        # "Aliasing": {'func':lambda img: Aliasing(factor=4)(img)[0], 'recent_scores': deque(maxlen=fliqe.smoothing_window)}
+        # "Crop": {'func':lambda img: Crop()(img)[0]}
+        # "Aliasing": {'func':lambda img: Aliasing(factor=4)(img)[0]}
     }
+    for k in distortions.keys():
+        fliqe.create_session(k)
 
     processed_frames = 0
     while True:
         ret, frame = cap.read()
         if not ret:
             break
-        # processed_frames += 1
+        processed_frames += 1
         # if processed_frames < 150:
         #     continue
         total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
@@ -70,11 +70,9 @@ if __name__ == "__main__":
             img = img.astype(np.float32)
 
             # FLIQE score
-            quality_score = fliqe.estimate_image_quality(dist['func'](frame))
-            dist['recent_scores'].append(quality_score)
-            smoothed_avg = np.mean(dist['recent_scores'])
+            quality_score = fliqe.estimate_smoothed_quality(dist['func'](frame), session_id=dist_name)
 
-            color = (0, 255, 0) if smoothed_avg >= fliqe.threshold else (0, 0, 255)
+            color = (0, 255, 0) if fliqe.get_smoothed_quality(dist_name) >= fliqe.threshold else (0, 0, 255)
             # Draw black rectangles as background for text
             overlay = annotated.copy()
             cv2.rectangle(overlay, (5, 10), (350, 100), (0, 0, 0), -1)
@@ -82,7 +80,7 @@ if __name__ == "__main__":
             cv2.addWeighted(overlay, alpha, annotated, 1 - alpha, 0, annotated)
             cv2.putText(annotated, dist_name, (10, 40), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (255, 255, 255), 2, cv2.LINE_AA)
             cv2.putText(annotated, f"FLIQE: ", (10, 80), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (255, 255, 255), 2, cv2.LINE_AA)
-            cv2.putText(annotated, f"{smoothed_avg:.2f}", (120, 80), cv2.FONT_HERSHEY_SIMPLEX, 1.0, color, 2, cv2.LINE_AA)
+            cv2.putText(annotated, f"{fliqe.get_smoothed_quality(dist_name):.2f}", (120, 80), cv2.FONT_HERSHEY_SIMPLEX, 1.0, color, 2, cv2.LINE_AA)
             annotated_versions.append(annotated)
 
 
