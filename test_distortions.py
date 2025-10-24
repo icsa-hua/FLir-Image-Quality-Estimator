@@ -14,7 +14,7 @@ if __name__ == "__main__":
     screen_height = user32.GetSystemMetrics(1)
     print(f"Screen size: {screen_width}x{screen_height}")
 
-    cap = cv2.VideoCapture("./data/1.MP4")
+    cap = cv2.VideoCapture("./data/2.MP4")
     ret, frame = cap.read()
     print(f"Video frame size: {frame.shape[1]}x{frame.shape[0]}")
     # Use a larger size, e.g., 80% of original
@@ -35,16 +35,16 @@ if __name__ == "__main__":
         "Overexposure": {'func':lambda img: Overexposure(factor=2.5)(img)[0]},
         "Underexposure": {'func':lambda img: Underexposure(factor=0.3)(img)[0]},
         "Compression": {'func':lambda img: Compression(quality=5)(img)[0]},
-        "Ghosting": {'func':lambda img: Ghosting(shift=10, alpha=0.6)(img)[0]},
-        # "Blackout": {'func':lambda img: Blackout()(img)[0]},
+        "Ghosting": {'func':lambda img: Ghosting(shift=10, alpha=0.6)(img)[0]},        
         "Noise": {'func':lambda img: GaussianNoise(mean=0, std=25)(img)[0]},
+        "Blackout": {'func':lambda img: Blackout()(img)[0]},
         # "Color Distortion": lambda img: ColorDistortion()(img)[0],
-        # "Glare": lambda img: Glare()(img)[0],
-        # "Flicker": lambda img: Flicker(factor=1.8)(img)[0],
-        # "Freeze": lambda img: FrameFreeze()(img)[0],
-        # "Obstruction": lambda img: Obstruction()(img)[0],
+        # "Glare": {'func':lambda img: Glare()(img)[0]},
+        # "Flicker": {'func':lambda img: Flicker(factor=1.8)(img)[0]},
+        # "Freeze": {'func':lambda img: FrameFreeze()(img)[0]},
+        # "Obstruction": {'func':lambda img: Obstruction()(img)[0]},
         # "Crop": {'func':lambda img: Crop()(img)[0]}
-        "Aliasing": {'func':lambda img: Aliasing(factor=4)(img)[0]}
+        # "Aliasing": {'func':lambda img: Aliasing(factor=4)(img)[0]}
     }
     for k in distortions.keys():
         fliqe.create_session(k)
@@ -55,8 +55,8 @@ if __name__ == "__main__":
         if not ret:
             break
         processed_frames += 1
-        # if processed_frames < 150:
-        #     continue
+        if processed_frames < 150:
+            continue
         total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
         print(f"Processing frame {processed_frames}/{total_frames}", end='\r')
         frame_small = cv2.resize(frame, small_size)
@@ -115,7 +115,7 @@ if __name__ == "__main__":
         )
         cv2.imshow("Distorted Frames", combined_frame_padded)
         if cv2.waitKey(1) & 0xFF == ord('q'):
-            cv2.imwrite("distorted_frames.png", combined_frame_padded)  # Uncomment to save the image
+            # cv2.imwrite("distorted_frames.png", combined_frame_padded)  # Uncomment to save the image
             break
         
         # if processed_frames == 600:

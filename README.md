@@ -4,15 +4,25 @@ A tool for evaluating and analyzing image quality from FLIR thermal cameras.
 ![Distorted Frames with Scores](pics/distorted_frames_with_scores.png)
 
 Download pre-trained models:
-- [FLIQE Encoder Model](https://github.com/icsa-hua/FLir-Image-Quality-Estimator/releases/download/uploading_models/resnet50_128_out.pth)
-- [FLIQE Binary Classifier Model](https://github.com/icsa-hua/FLir-Image-Quality-Estimator/releases/download/uploading_models/binary_head.pth)
+- [FLIQE Encoder](https://github.com/icsa-hua/FLir-Image-Quality-Estimator/releases/download/uploading_models/resnet50_128_out.pth)
+- [FLIQE Encoder + Binary Head](https://github.com/icsa-hua/FLir-Image-Quality-Estimator/releases/download/uploading_models/binary_head.pth)
+
+## How to use
+```python
+from flir_iqa import FLIQE
+
+fliqe = FLIQE(
+    quality_model_path='models/encoder_with_binary_head.pth'
+)
+score = fliqe.estimate_image_quality(image)
+print("Image quality score:", score)
+```
 
 ## How it works
-
 FLIQE employs a sophisticated machine learning approach to assess the quality of thermal images from FLIR cameras. The system works through several key stages:
 
 ### 1. Feature Extraction with Pre-trained Networks
-The system leverages powerful pre-trained computer vision models (ResNet18, ResNet50, and Vision Transformer) as feature extractors. These networks, originally trained on large-scale image datasets, provide robust visual representations that capture important structural and textural patterns in thermal images.
+The system leverages powerful pre-trained computer vision model (ResNet50) as feature extractor. These network, originally trained on large-scale image datasets, provide robust visual representations that capture important structural and textural patterns in thermal images.
 
 ### 2. Contrastive Learning Framework
 FLIQE uses supervised contrastive learning to train an embedding space where images with similar quality characteristics are positioned close together, while images with different quality issues are separated. This approach allows the model to learn nuanced quality representations without requiring explicit quality scores for training.
@@ -24,6 +34,7 @@ To train the quality assessment system, FLIQE generates various types of image d
 - **Exposure problems**: Overexposure and underexposure conditions that affect thermal sensitivity
 - **Compression artifacts**: Quality degradation from image compression during storage or transmission
 - **Thermal-specific issues**: Ghosting effects and aliasing that are particularly relevant to thermal imaging
+![t-SNE Visualization of Distorted Images](pics/tsne_distorted_images.png)
 
 ### 4. Multi-Stage Quality Assessment
 The system operates in two phases:
