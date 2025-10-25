@@ -46,8 +46,9 @@ The FLIQE Encoder was trained using supervised contrastive learning on the FLIR 
 - **Environmental artifacts**: Gaussian noise representing sensor limitations and thermal interference
 - **Exposure problems**: Overexposure and underexposure conditions that affect thermal sensitivity
 - **Compression artifacts**: Quality degradation from image compression during storage or transmission
-- **Thermal-specific issues**: Ghosting effects and aliasing that are particularly relevant to thermal imaging \
-One t-SNE representation of the learned embedding space is shown below:
+- **Thermal-specific issues**: Ghosting effects and aliasing that are particularly relevant to thermal imaging
+
+The t-SNE representation of the learned embedding space is shown below:
 ![t-SNE Visualization of Distorted Images](pics/tsne_distorted_images.png)
 
 ### 3. FLIQE Binary Head 
