@@ -1,13 +1,12 @@
 from collections import deque
 import cv2
 import numpy as np
-from models import DistortionBinaryClassifier, IQAEncoder
 import torch
 from torchvision import transforms
+from fliqe.models import DistortionBinaryClassifier, IQAEncoder
 
 
-# device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-device = torch.device("cpu")
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 transform = transforms.Compose([
     transforms.ToPILImage(),

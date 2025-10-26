@@ -1,9 +1,9 @@
-from collections import deque
 import ctypes
 import cv2
-import torch
-from distortions import *
+import sys, os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))
 from fliqe import OnlineFLIQE
+from fliqe.distortions import *
 
 
 if __name__ == "__main__":

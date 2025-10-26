@@ -168,10 +168,10 @@ def plot_tsne(features, labels, label_map, epoch, model_name, dim_out, avg_loss)
 
 
 if __name__ == "__main__":
-    from datasets import ImageDataset
+    from src.datasets import ImageDataset
     from torchvision import transforms
     from torch.utils.data import DataLoader
-    from distortions import *
+    from src.distortions import *
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
