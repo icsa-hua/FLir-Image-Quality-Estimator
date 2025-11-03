@@ -33,6 +33,9 @@ class IQAEncoder(nn.Module):
             encoder.fc = nn.Identity()
         self.encoder = encoder
 
+        # Add adaptive pooling for spatial feature aggregation
+        # self.adaptive_pool = nn.AdaptiveAvgPool2d((1, 1))  # Or AdaptiveMaxPool2d
+
         # Optionally freeze encoder parameters
         if pretrained and freeze_encoder:
             for param in self.encoder.parameters():
@@ -60,6 +63,12 @@ class IQAEncoder(nn.Module):
 
     def forward(self, x):
         features = self.encoder(x)
+        
+        # # Apply adaptive pooling if features are spatial (4D tensor)
+        # if len(features.shape) == 4:
+        #     features = self.adaptive_pool(features)
+        #     features = features.view(features.size(0), -1)  # Flatten
+            
         out = self.projection_head(features)
         return nn.functional.normalize(out, dim=1)
 

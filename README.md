@@ -41,7 +41,7 @@ FLIQE employs a sophisticated machine learning approach to assess the quality of
 The system leverages powerful pre-trained computer vision model (ResNet50) as feature extractor. This network, originally trained on large-scale image datasets, provide robust visual representations that capture important structural and textural patterns in thermal images.
 
 ### 2. FLIQE Encoder With Supervised Contrastive Learning
-The FLIQE Encoder was trained using supervised contrastive learning on the FLIR Thermal Images Dataset, learning an embedding space where images with similar quality characteristics are positioned close together, while those with differing quality issues are separated. To effectively train the quality assessment system, FLIQE applies comprehensive distortion simulation, including:
+The FLIQE Encoder was trained using supervised contrastive learning on the [FLIR Thermal Images Dataset](https://www.kaggle.com/datasets/deepnewbie/flir-thermal-images-dataset), learning an embedding space where images with similar quality characteristics are positioned close together, while those with differing quality issues are separated. To effectively train the quality assessment system, FLIQE applies comprehensive distortion simulation, including:
 - **Optical distortions**: Lens blur and motion blur that simulate camera movement or focus issues
 - **Environmental artifacts**: Gaussian noise representing sensor limitations and thermal interference
 - **Exposure problems**: Overexposure and underexposure conditions that affect thermal sensitivity
@@ -52,11 +52,35 @@ The t-SNE representation of the learned embedding space is shown below:
 ![t-SNE Visualization of Distorted Images](pics/tsne_distorted_images.png)
 
 ### 3. FLIQE Binary Head 
-The FLIQE Binary Head is a lightweight MLP classifier that takes the embeddings produced by the FLIQE Encoder and predicts the quality level of input thermal images. It is trained on a private dataset of FLIR thermal images annotated as either distorted (1) or not (0), using the simulated distortions described above. The performance of the FLIQE Binary Head is summarized in the table below:
+The FLIQE Binary Head is a lightweight MLP classifier that takes the embeddings produced by the FLIQE Encoder and predicts the quality level of input thermal images. It is trained on a private dataset of FLIR thermal images annotated as either distorted (1) or not (0), using the simulated distortions described above.
 
-| Metric | Score |
-|--------|-------|
-| Accuracy | 0.9275 |
-| Precision | 0.9423 |
-| Recall | 0.8917 |
-| F1-score | 0.9163 |
+## Evaluation and comparison with other IQA methods
+FLIQE was evaluated against several established no-reference image quality assessment (IQA) methods, including statistical-based approaches (BRISQUE, NIQE, PIQE) and deep learning-based methods (ARNIQA, PAQ2PIQ, MUSIQ, DBCNN, CLIPIQA).
+
+The comparison study employed the following approach:
+- **Dataset**: [FLIR ADAS v2 thermal images](https://www.kaggle.com/datasets/deepnewbie/flir-thermal-images-dataset) (training and validation sets).
+- **Distortions**: Applied 9 different distortion as mentioned above.
+- **Binary Classification**: Images classified as either distorted (1) or clean (0).
+- **Calibration**: Platt scaling applied to training set to convert quality scores to calibrated probabilities.
+- **Metrics**: Accuracy, Precision, Recall, and F1-score evaluated on the validation set.
+
+The comparative evaluation demonstrates FLIQE's superior performance across all metrics:
+
+| Algorithm | Accuracy | Precision | Recall | F1-Score |
+|-----------|----------|-----------|--------|----------|
+| **FLIQE** | **0.859** | **0.898** | **0.773** | **0.831** |
+| ARNIQA    | 0.810     | 0.813     | 0.748  | 0.779    |
+| BRISQUE   | 0.821     | 0.887     | 0.688  | 0.774    |
+| NIQE      | 0.789     | 0.814     | 0.686  | 0.744    |
+| PIQE      | 0.792     | 0.883     | 0.617  | 0.726    |
+| DBCNN     | 0.736     | 0.717     | 0.678  | 0.697    |
+| PAQ2PIQ   | 0.743     | 0.752     | 0.635  | 0.689    |
+| MUSIQ     | 0.729     | 0.713     | 0.660  | 0.686    |
+| CLIPIQA   | 0.716     | 0.700     | 0.639  | 0.668    |
+
+*Note: Run the 'comparison' notebook to populate the actual metric values*
+
+## Limitations and Future Work
+While FLIQE demonstrates strong performance in assessing the quality of FLIR thermal images, there are several limitations and areas for future improvement:
+- **Dataset Diversity**: The synthetic distortions may not encompass the full range of real-world distortions encountered in various environments.
+- **Model Generalization**: Further validation on diverse datasets from different FLIR camera models and settings is needed to ensure robustness. For example, testing on real-world distorted images captured in various conditions or using different [FLIR Thermal Color Palettes](https://www.flir.com/discover/industrial/picking-a-thermal-color-palette/?srsltid=AfmBOorLoCf_-y7ndgyb5wE0mGTtHrj9DXKc4MlLT0MxNcGEh_WaGVGq).
