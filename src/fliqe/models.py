@@ -11,9 +11,9 @@ from tqdm import tqdm
 
 
 models_dict = {
-    'resnet18': {'model': models.resnet18, 'output_dim': 512, 'pre_trained_weights': models.ResNet18_Weights.IMAGENET1K_V1},
+    # 'resnet18': {'model': models.resnet18, 'output_dim': 512, 'pre_trained_weights': models.ResNet18_Weights.IMAGENET1K_V1},
     'resnet50': {'model': models.resnet50, 'output_dim': 2048, 'pre_trained_weights': models.ResNet50_Weights.IMAGENET1K_V1},
-    'vit_b_16': {'model': models.vit_b_16, 'output_dim': 768, 'pre_trained_weights': models.ViT_B_16_Weights.IMAGENET1K_SWAG_E2E_V1}
+    # 'vit_b_16': {'model': models.vit_b_16, 'output_dim': 768, 'pre_trained_weights': models.ViT_B_16_Weights.IMAGENET1K_SWAG_E2E_V1}
 }
 
 
@@ -168,10 +168,10 @@ def plot_tsne(features, labels, label_map, epoch, model_name, dim_out, avg_loss)
 
 
 if __name__ == "__main__":
-    from src.datasets import ImageDataset
+    from fliqe.datasets import ImageDataset
     from torchvision import transforms
     from torch.utils.data import DataLoader
-    from src.distortions import *
+    from fliqe.distortions import *
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")

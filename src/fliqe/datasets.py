@@ -1,6 +1,6 @@
 import cv2
 from torch.utils.data import Dataset
-from src.distortions import *
+from fliqe.distortions import *
 
 
 class ImageDataset(Dataset):
