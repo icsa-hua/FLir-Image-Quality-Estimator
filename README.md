@@ -35,13 +35,10 @@ FLIQE implements two classes for image quality estimation:
   ```
 
 ## How it works
-FLIQE employs a sophisticated machine learning approach to assess the quality of thermal images from FLIR cameras. The system works through several key stages:
+FLIQE employs a sophisticated machine learning approach to assess the quality of thermal images from FLIR cameras. The system works through 2 main components:
 
-### 1. Feature Extraction with Pre-trained Networks
-The system leverages powerful pre-trained computer vision model (ResNet50) as feature extractor. This network, originally trained on large-scale image datasets, provide robust visual representations that capture important structural and textural patterns in thermal images.
-
-### 2. FLIQE Encoder With Supervised Contrastive Learning
-The FLIQE Encoder was trained using supervised contrastive learning on the [FLIR Thermal Images Dataset](https://www.kaggle.com/datasets/deepnewbie/flir-thermal-images-dataset), learning an embedding space where images with similar quality characteristics are positioned close together, while those with differing quality issues are separated. To effectively train the quality assessment system, FLIQE applies comprehensive distortion simulation, including:
+### 1. FLIQE Encoder
+The FLIQE Encoder consists of a frozen ResNet50 backbone followed by an adaptive MLP projection head that halves dimensions at each step (2048→1024→512→256→128) and finally outputs a 128-dimensional embedding. The projection head was trained using **supervised contrastive learning** on the [FLIR Thermal Images Dataset](https://www.kaggle.com/datasets/deepnewbie/flir-thermal-images-dataset), learning an embedding space where images with similar quality characteristics are positioned close together, while those with differing quality issues are separated. To effectively train the quality assessment system, FLIQE applies comprehensive distortion simulation, including:
 - **Optical distortions**: Lens blur and motion blur that simulate camera movement or focus issues
 - **Environmental artifacts**: Gaussian noise representing sensor limitations and thermal interference
 - **Exposure problems**: Overexposure and underexposure conditions that affect thermal sensitivity
@@ -51,7 +48,7 @@ The FLIQE Encoder was trained using supervised contrastive learning on the [FLIR
 The t-SNE representation of the learned embedding space is shown below:
 ![t-SNE Visualization of Distorted Images](pics/tsne_distorted_images.png)
 
-### 3. FLIQE Binary Head 
+### 2. FLIQE Binary Head 
 The FLIQE Binary Head is a lightweight MLP classifier that takes the embeddings produced by the FLIQE Encoder and predicts the quality level of input thermal images. It is trained on a private dataset of FLIR thermal images annotated as either distorted (1) or not (0), using the simulated distortions described above.
 
 ## Evaluation and comparison with other IQA methods
