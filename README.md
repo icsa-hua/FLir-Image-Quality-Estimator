@@ -35,6 +35,10 @@ FLIQE implements two classes for image quality estimation:
   ```
 
 ## How it works
+<div align="left">
+  <img src="pics/FLIQE_architecture.png" alt="FLIQE Architecture" width="900">
+</div>
+
 FLIQE employs a sophisticated machine learning approach to assess the quality of thermal images from FLIR cameras. The system works through 2 main components:
 
 ### 1. FLIQE Encoder
@@ -49,7 +53,7 @@ The t-SNE representation of the learned embedding space is shown below:
 ![t-SNE Visualization of Distorted Images](pics/tsne_distorted_images.png)
 
 ### 2. FLIQE Binary Head 
-The FLIQE Binary Head is a lightweight MLP classifier that takes the embeddings produced by the FLIQE Encoder and predicts the quality level of input thermal images. It is trained on a private dataset of FLIR thermal images annotated as either distorted (1) or not (0), using the simulated distortions described above.
+The FLIQE Binary Head is a lightweight MLP classifier that takes the embeddings produced by the FLIQE Encoder and predicts the quality level of input thermal images. It is trained on a private dataset of FLIR thermal images annotated as either distorted (1) or not (0), using the simulated distortions described above. It outputs logits indicating distortion likelihood. To obtain interpretable quality scores, we apply sigmoid normalization to convert logits to probabilities, then compute the quality score as Q = 1 - P(distortion), ensuring that higher scores correspond to better image quality on a [0,1] scale.
 
 ## Evaluation and comparison with other IQA methods
 FLIQE was evaluated against several established no-reference image quality assessment (IQA) methods, including statistical-based approaches (BRISQUE, NIQE, PIQE) and deep learning-based methods (ARNIQA, PAQ2PIQ, MUSIQ, DBCNN, CLIPIQA).
