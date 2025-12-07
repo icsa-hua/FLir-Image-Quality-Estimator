@@ -1,0 +1,15 @@
+.gitignore
+.venv
+.vscode/
+*.md
+notebooks/
+scripts/
+pics/
+*.egg-info/
+Dockerfile
+docker-compose*.yml
+.dockerignore
+LICENSE
+README.md
+# Keep data for testing. Ensure that the test data is small.
+# data/

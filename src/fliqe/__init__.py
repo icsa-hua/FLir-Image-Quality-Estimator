@@ -69,6 +69,13 @@ class OnlineFLIQE(FLIQE):
         if session_id not in self.sessions:
             return 0
         return self.sessions[session_id]['smoothed_avg']
+    
+    def get_raw_quality(self, session_id):
+        if session_id not in self.sessions:
+            return 0
+        if not self.sessions[session_id]['recent_scores']:
+            return 0
+        return self.sessions[session_id]['recent_scores'][-1]
 
     def remove_session(self, session_id):
         self.sessions.pop(session_id, None)

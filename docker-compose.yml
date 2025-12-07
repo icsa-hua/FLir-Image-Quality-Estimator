@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  fliqe-api:
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile
+    image: kaoulis/fliqe-api:latest
+    container_name: fliqe-api
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONPATH=/app/src
+      - PYTHONUNBUFFERED=1
+    volumes:
+      # Mount models directory to allow model updates without rebuilding
+      - ./models:/app/models:ro
+      # Mount kafka certificates
+      - ./kafka_certificates:/app/kafka_certificates:ro
+      # Mount data directory for persistent storage
+      - ./data:/app/data:ro
+      # Optional: Mount source code for development (uncomment for dev mode)
+      # - ./src:/app/src
+
+    # 👉 Add this so SSL hostname verification works inside the container
+    extra_hosts:
+      - "archimedes-dev.local:192.168.188.21"
+    working_dir: /app
+    command: ["python", "src/api/app.py"]
+    restart: unless-stopped
