@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import asyncio
@@ -67,6 +68,7 @@ class RtspToKafkaProcessor:
             raw_score = self.fliqe.get_raw_quality(self.video_uri)
             print(f"FLIQE Smoothed Score: {smoothed_score}, Raw Score: {raw_score}")
             message_payload = {
+                "timestamp": datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3] + 'Z',
                 "smoothing_window": self.fliqe.smoothing_window, 
                 "raw_image_quality": raw_score, 
                 "smoothed_image_quality": smoothed_score 
