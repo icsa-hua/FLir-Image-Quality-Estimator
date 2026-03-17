@@ -14,7 +14,7 @@ if __name__ == "__main__":
     screen_height = user32.GetSystemMetrics(1)
     print(f"Screen size: {screen_width}x{screen_height}")
 
-    cap = cv2.VideoCapture("./data/2.MP4")
+    cap = cv2.VideoCapture("./data/3.MP4")
     ret, frame = cap.read()
     print(f"Video frame size: {frame.shape[1]}x{frame.shape[0]}")
     # Use a larger size, e.g., 80% of original
@@ -55,7 +55,7 @@ if __name__ == "__main__":
         if not ret:
             break
         processed_frames += 1
-        if processed_frames < 150:
+        if processed_frames < 0:
             continue
         total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
         print(f"Processing frame {processed_frames}/{total_frames}", end='\r')
@@ -113,13 +113,13 @@ if __name__ == "__main__":
         combined_frame_padded = cv2.copyMakeBorder(
             resized, top, bottom, left, right, cv2.BORDER_CONSTANT, value=[0, 0, 0]
         )
-        cv2.imshow("Distorted Frames", combined_frame_padded)
+        # cv2.imshow("Distorted Frames", combined_frame_padded)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             # cv2.imwrite("distorted_frames.png", combined_frame_padded)  # Uncomment to save the image
             break
         
-        # if processed_frames == 600:
-        #     break
+        if processed_frames == 2100:
+            break
 
     cap.release()
     out.release()

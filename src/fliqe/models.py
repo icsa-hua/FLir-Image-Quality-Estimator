@@ -197,6 +197,7 @@ if __name__ == "__main__":
         transforms.ToPILImage(),
         transforms.Resize((224, 224)), # 224 or 384
         transforms.ToTensor(),
+        # transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]), TODO: check if needed for thermal images
     ])
 
     image_folder = "data/FLIR_ADAS_v2/images_thermal_train/data"

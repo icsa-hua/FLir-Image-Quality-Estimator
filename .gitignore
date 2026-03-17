@@ -8,3 +8,4 @@ models/
 *.egg-info/
 *.mp4
 kafka_certificates
+test.py
