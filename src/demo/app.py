@@ -25,18 +25,29 @@ with st.sidebar:
         with open(logo_path, "rb") as f:
             logo_b64 = base64.b64encode(f.read()).decode()
         st.markdown(
-            f'<img src="data:image/png;base64,{logo_b64}" style="width:50%; height:auto;">',
+            f"""
+            <div style="display:flex; align-items:center; gap:12px; padding:8px 0;">
+                <img src="data:image/png;base64,{logo_b64}"
+                     style="width:48px; height:auto;">
+                <span style="font-size:1.3rem; font-weight:700; line-height:1.2;">
+                    Data Quality<br>Estimator
+                </span>
+            </div>
+            """,
             unsafe_allow_html=True,
         )
-    st.title("Data Quality Estimator")
+    else:
+        st.title("Data Quality Estimator")
     st.divider()
 
     data_type = st.selectbox("Data Type", ["Tabular", "Image", "Video"])
 
     if data_type == "Tabular":
         analysis_method = st.selectbox("Analysis Method", ["Statistical", "MMD"])
+    elif data_type == "Image":
+        analysis_method = st.selectbox("Analysis Method", ["FLIQE"])
     else:
-        analysis_method = st.selectbox("Analysis Method", ["FLIQE", "OnlineFLIQE"])
+        analysis_method = st.selectbox("Analysis Method", ["OnlineFLIQE"])
 
     st.divider()
 
