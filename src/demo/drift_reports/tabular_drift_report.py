@@ -151,67 +151,65 @@ class TabularDriftReport(Report):
         drift_method = args[0] if args else "Statistical"
         import streamlit as st
 
-        st.markdown(
-            "<h2 style=\"text-align: center; margin-bottom: 20px;\">Tabular Drift Detection Report</h2>",
-            unsafe_allow_html=True,
-        )
-
-        # --- Data Quality Overview ---
-        st.subheader("Data Quality Overview")
-        overview_col1, overview_col2 = st.columns(2)
-        with overview_col1:
-            st.dataframe(self.df_overall_comparison(), use_container_width=True)
-        with overview_col2:
-            has_missing = (
-                self.df_ref[self.common_features].isna().sum().sum() > 0
-                or self.df_test[self.common_features].isna().sum().sum() > 0
-            )
-            if has_missing:
-                st.plotly_chart(self.plot_missing_values(), config={"displayModeBar": False}, use_container_width=True)
-            else:
-                st.success("No missing values detected in common features.")
-
-        st.divider()
-
-        # --- Drift Detection ---
+        # --- Run drift detection up front ---
         with st.spinner("Running drift detection...", show_time=True):
             result = self.detect_drift(method=drift_method)
 
-        st_col1, st_col2 = st.columns([0.2, 0.8])
-        with st_col1:
-            st.write("##### Overall")
-            drift_info = pd.DataFrame(
-                [
-                    ["Drift Method:", drift_method],
-                    ["Threshold:", result["threshold"]],
-                    ["Drift:", "Yes" if result["is_drift"] else "No"],
-                ]
-            )
-            styled_df = (
-                drift_info.style.hide(axis="index")
-                .hide(axis="columns")
-                .map(self.apply_status_style)
-                .set_properties(**{"border": "none", "font-size": "11pt"})
-                .set_table_styles(
-                    [dict(selector="td", props=[("padding-right", "40px"), ("padding-bottom", "5px")])]
-                )
-                .to_html()
-            )
-            st.markdown(styled_df, unsafe_allow_html=True)
+        drifted = [
+            self.common_features[i]
+            for i in range(len(self.common_features))
+            if result["p_val"][i] < result["threshold"]
+        ]
+        n_drifted = len(drifted)
+        n_features = len(self.common_features)
 
-        with st_col2:
-            drifted = [
-                self.common_features[i]
-                for i in range(len(self.common_features))
-                if result["p_val"][i] < result["threshold"]
-            ]
-            if drifted:
-                drifted_str = ", ".join(drifted)
-                st.warning(
-                    f"Drift detected in {len(drifted)}/{len(self.common_features)} features: {drifted_str}"
+        # --- Header with drift status badge ---
+        if result["is_drift"]:
+            badge_color, badge_text = "#d32f2f", "DRIFT DETECTED"
+        else:
+            badge_color, badge_text = "#388e3c", "NO DRIFT"
+
+        st.markdown(
+            f"""
+            <div style="display:flex; align-items:center; gap:16px; margin-bottom:8px;">
+                <h2 style="margin:0;">Tabular Drift Report</h2>
+                <span style="background:{badge_color}; color:white; padding:4px 14px;
+                             border-radius:12px; font-size:0.85rem; font-weight:600;">
+                    {badge_text}
+                </span>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+        # --- Metric cards row ---
+        ref_summary = self.summarize_dataframe(self.df_ref)
+        test_summary = self.summarize_dataframe(self.df_test)
+        ref_missing = self.df_ref[self.common_features].isna().sum().sum()
+        test_missing = self.df_test[self.common_features].isna().sum().sum()
+
+        m1, m2, m3, m4, m5 = st.columns(5)
+        m1.metric("Reference rows", f"{ref_summary['Number of observations']:,}")
+        m2.metric("Test rows", f"{test_summary['Number of observations']:,}")
+        m3.metric("Common features", n_features)
+        m4.metric("Features drifted", f"{n_drifted} / {n_features}")
+        m5.metric("Missing cells", f"{ref_missing + test_missing:,}")
+
+        # --- Drift summary bar ---
+        if n_drifted > 0:
+            st.warning(f"Drift in: {', '.join(drifted)}")
+        else:
+            st.success("All features are stable — no drift detected.")
+
+        # --- Missing values chart (only if there are missing values) ---
+        has_missing = ref_missing > 0 or test_missing > 0
+        if has_missing:
+            with st.expander("Missing values breakdown"):
+                st.plotly_chart(
+                    self.plot_missing_values(),
+                    config={"displayModeBar": False},
+                    use_container_width=True,
                 )
-            else:
-                st.success("No drift detected in any feature.")
 
         st.divider()
 
