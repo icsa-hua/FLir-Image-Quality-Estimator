@@ -14,7 +14,7 @@ class VideoDriftReport(Report):
         self.quality_model_path = quality_model_path
         self.smoothing_window = smoothing_window
 
-    def _process_with_online_fliqe(self, sample_rate=5):
+    def _process_with_online_fliqe(self, sample_rate=5, progress_callback=None):
         """Process video frames using OnlineFLIQE (smoothed quality)."""
         fliqe = OnlineFLIQE(
             quality_model_path=self.quality_model_path,
@@ -53,6 +53,8 @@ class VideoDriftReport(Report):
                     sample_frames.append((frame.copy(), raw, smoothed, frame_idx))
 
             frame_idx += 1
+            if progress_callback and total_frames > 0:
+                progress_callback(frame_idx / total_frames)
 
         cap.release()
 
@@ -66,7 +68,7 @@ class VideoDriftReport(Report):
             "sample_frames": sample_frames,
         }
 
-    def _process_with_fliqe(self, sample_rate=5):
+    def _process_with_fliqe(self, sample_rate=5, progress_callback=None):
         """Process video frames using FLIQE (per-frame quality, no smoothing)."""
         fliqe = FLIQE(quality_model_path=self.quality_model_path)
 
@@ -98,6 +100,8 @@ class VideoDriftReport(Report):
                     sample_frames.append((frame.copy(), score, score, frame_idx))
 
             frame_idx += 1
+            if progress_callback and total_frames > 0:
+                progress_callback(frame_idx / total_frames)
 
         cap.release()
 
@@ -123,11 +127,15 @@ class VideoDriftReport(Report):
             unsafe_allow_html=True,
         )
 
-        with st.spinner("Processing video frames...", show_time=True):
-            if analysis_method == "OnlineFLIQE":
-                results = self._process_with_online_fliqe(sample_rate=sample_rate)
-            else:
-                results = self._process_with_fliqe(sample_rate=sample_rate)
+        progress_bar = st.progress(0, text="Processing video frames...")
+        def update_progress(pct):
+            progress_bar.progress(min(pct, 1.0), text=f"Processing video frames... {pct:.0%}")
+
+        if analysis_method == "OnlineFLIQE":
+            results = self._process_with_online_fliqe(sample_rate=sample_rate, progress_callback=update_progress)
+        else:
+            results = self._process_with_fliqe(sample_rate=sample_rate, progress_callback=update_progress)
+        progress_bar.empty()
 
         raw = results["raw_scores"]
         smoothed = results["smoothed_scores"]
