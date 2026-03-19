@@ -9,6 +9,8 @@ import base64
 
 # Add demo directory to path for drift_reports imports
 sys.path.insert(0, os.path.dirname(__file__))
+# Add src directory to path for fliqe imports
+sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from drift_reports.tabular_drift_report import TabularDriftReport
 from drift_reports.image_drift_report import ImageDriftReport
@@ -120,7 +122,7 @@ elif data_type == "Video":
         with st.sidebar:
             st.divider()
             sample_rate = st.slider(
-                "Frame Sample Rate", 1, 30, 5, help="Process every Nth frame"
+                "Frame Sample Rate", 1, 30, 30, help="Process every Nth frame"
             )
             if analysis_method == "OnlineFLIQE":
                 smoothing_window = st.slider("Smoothing Window", 10, 300, 150)
