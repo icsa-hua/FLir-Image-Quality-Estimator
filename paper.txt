@@ -1,0 +1,306 @@
+\documentclass[conference]{IEEEtran}
+\IEEEoverridecommandlockouts
+% The preceding line is only needed to identify funding in the first footnote. If that is unneeded, please comment it out.
+%Template version as of 6/27/2024
+
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{algorithmic}
+\usepackage{graphicx}
+\usepackage{textcomp}
+\usepackage{xcolor}
+\usepackage[table]{xcolor}
+\usepackage{tikz}
+\usepackage{hyperref}
+\usepackage{float}
+\usepackage{stfloats}
+\usetikzlibrary{positioning, shapes, arrows}
+\def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
+    T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+
+% Fix margins: top >= 0.75 in, bottom >= 1.0 in, gutter >= 0.24 in
+\usepackage[top=0.75in, bottom=1.1in, left=0.625in, right=0.625in, columnsep=0.25in]{geometry}
+
+\begin{document}
+
+\title{Image Quality Assessment (IQA) in Thermal Imagery\\
+}
+
+\author{\IEEEauthorblockN{1\textsuperscript{st} Kyriakos Chiotis}
+\IEEEauthorblockA{\textit{Dept of Informatics and Telematics} \\
+\textit{Harokopio University of Athens}\\
+Athens, Greece \\
+kyriakoschiotis@hua.gr}
+\and
+
+\IEEEauthorblockN{2\textsuperscript{nd} Artemis Stefanidou}
+\IEEEauthorblockA{
+\textit{Dept of Informatics and Telematics} \\
+\textit{Harokopio University of Athens} \\
+Athens, Greece \\
+astefanidou@hua.gr
+}
+\and
+\IEEEauthorblockN{3\textsuperscript{rd} Elena Politi}
+\IEEEauthorblockA{
+\textit{Dept of Informatics and Telematics} \\
+\textit{Harokopio University of Athens} \\
+Athens, Greece \\
+politie@hua.gr
+}
+\and
+\IEEEauthorblockN{ ~~~~~~~~~~~~~~~~~~~~~ 4\textsuperscript{th} Konstantinos Gyftodimos}
+\IEEEauthorblockA{
+\textit{~~~~~~~~~~~~~~~~~~~~~~~~~~ANADELTA P.C.}\\
+~~~~~~~~~~~~~~~~~~~~~~~~~~Athens, Greece \\
+~~~~~~~~~~~~~~~~~~~~~~~~~~kgyftodimos@anadelta.hua.gr}
+\and
+\IEEEauthorblockN{5\textsuperscript{th} George Dimitrakopoulos}
+\IEEEauthorblockA{
+\textit{Dept of Informatics and Telematics} \\
+\textit{Harokopio University of Athens} \\
+Athens, Greece \\
+gdimitra@hua.gr
+}
+}
+
+\maketitle
+
+\begin{abstract}
+In Search and Rescue (SAR) operations, reliable sensor data is critical for safe and effective decision-making. However, thermal imagery is often degraded by noise and environmental factors, compromising perception. Existing no-reference Image Quality Assessment (IQA) methods, primarily trained on natural images, fail to capture thermal-specific degradations. This paper presents the FLIR Image Quality Estimator (FLIQE), a lightweight no-reference IQA framework tailored for real-time SAR, where quality assessment is formulated as a binary integrity detection task. By explicitly modeling thermal degradation, FLIQE enables efficient on-board screening of corrupted frames, achieving robust and accurate performance.
+\end{abstract}
+
+\begin{IEEEkeywords}
+No-Reference Image Quality Assessment, Thermal Infrared Imaging, Supervised Contrastive Learning, ResNet, Real-Time Perception, Embedding Space Learning, Sensor Quality Monitoring, Search and Rescue
+\end{IEEEkeywords}
+
+\section{Introduction}
+
+In Search and Rescue (SAR) environments, timely and reliable data acquisition is critical for mission success. Autonomous platforms equipped with advanced sensing and communication capabilities enable real-time monitoring in hazardous and inaccessible areas; however, degraded sensor data can severely compromise perception and downstream decision-making \cite{abdelnabi2024human}. Since perception forms the foundation of autonomous operation, accurately assessing image quality is essential, as faults or anomalies may indicate underlying sensor failures and lead to unsafe or incorrect system behavior \cite{fang2024anomaly}.
+
+Image Quality Assessment (IQA) provides a systematic framework for evaluating visual data integrity and supporting reliable perception in safety-critical applications \cite{10858123}. However, most existing IQA methods are developed for RGB imagery and fail to capture the distinct characteristics of thermal infrared data. This limitation is particularly significant, as thermal cameras are increasingly deployed in autonomous systems operating under low-visibility conditions, such as smoke, fog, or darkness, where RGB sensors are ineffective \cite{rizk2023human}. As a result, the reliability of perception pipelines in such scenarios becomes heavily dependent on the quality of thermal input.
+
+Despite their advantages, thermal images are highly sensitive to environmental interference, sensor drift, and calibration inconsistencies, which can significantly degrade contrast and reliability \cite{heinzler2019}. While IQA has been extensively studied for natural images, its extension to thermal imagery remains limited, as conventional approaches do not adequately model modality-specific degradation patterns \cite{s21217346}. Consequently, current perception pipelines lack robust mechanisms to automatically detect and filter low-quality thermal frames before they affect downstream tasks.
+
+This challenge is further amplified in SAR operations, where systems operate under dynamic and unpredictable conditions. The absence of reliable thermal-image quality assessment increases the risk of error propagation across perception, localization, and decision-making modules. Therefore, there is a clear need for automated, data-driven thermal IQA methods capable of real-time, on-board deployment to enhance the robustness and resilience of modern autonomous systems \cite{agnolucci2024arniqa, sharma2022real}.
+
+To address these challenges, this work introduces the following contributions:
+
+\begin{enumerate}
+    \item \textbf{Thermal-domain IQA adaptation.}
+    Extension of no-reference IQA to thermal imagery for robust quality estimation in SAR environments.
+
+    \item \textbf{Lightweight on-board architecture.}
+    A frozen ResNet-50 with an MLP head produces compact 128-D embeddings capturing thermal degradations.
+
+    \item \textbf{Efficient real-time quality scoring.}
+    A binary module identifies corrupted frames before downstream processing.
+
+    \item \textbf{Evaluation under realistic degradations.}
+    Experiments across multiple SAR-inspired synthetic distortions demonstrate improved perception reliability.
+\end{enumerate}
+
+Overall, rather than introducing a new learning algorithm, FLIQE contributes a thermal-domain reformulation of no-reference IQA as a lightweight binary integrity-detection task, explicitly modeling thermal-specific degradation mechanisms and prioritizing real-time, on-board assessment for safety-critical SAR operations.
+
+The rest of the paper is organized as follows. Section~\ref{sec:relatedwork} reviews related work, Section~\ref{sec:methodology} presents the proposed framework, Section~\ref{sec:results} reports the experimental evaluation, and Section~\ref{sec:conclusion} concludes the paper.
+
+\begin{figure*}[b!]
+    \centering
+    \includegraphics[width=0.6\linewidth]{photos/FLIQE_architecture.png}
+    \caption{Overview of the FLIQE system architecture showing the encoder backbone, projection head, and binary classification head.}
+    \label{fig:architecture}
+\end{figure*}
+
+\section{Related Work}
+\label{sec:relatedwork}
+
+Classical no-reference IQA methods, such as NIQE \cite{mittal2012making}, estimate image quality by modeling natural scene statistics without requiring reference images. These approaches rely on statistical regularities of natural images to detect deviations caused by distortions. More broadly, recent IQA methods can be grouped into four categories: spatial-aware IQA, unified IQA, explainable IQA, and AI-generated content (AIGC) IQA.
+
+Spatial-aware IQA focuses on localized distortions and region-level quality prediction. Recent approaches, such as Grounding-IQA \cite{chen2024grounding} and SEAGULL \cite{chen2024seagull}, improve fine-grained assessment by leveraging multimodal models to associate image regions with quality descriptions. However, their reliance on large-scale models and annotated data limits their applicability in real-time and resource-constrained environments. In parallel, classical and deep no-reference baselines, including BRISQUE \cite{mittal2012no} and MUSIQ \cite{ke2021musiq}, capture either statistical deviations or multi-scale contextual features, achieving strong performance on natural images but showing limited generalization to thermal imagery.
+
+Unified IQA approaches aim to provide consistent quality assessment across diverse distortion types and datasets. For example, ARNIQA \cite{agnolucci2024arniqa} learns quality representations through self-supervised distortion modeling, enabling improved cross-dataset generalization without explicit labels. Similarly, PromptIQA \cite{chen2024promptiqa} introduces prompt-based conditioning to adapt quality prediction to different scenarios. Despite their flexibility, these methods are not tailored to thermal-image integrity assessment in safety-critical applications.
+
+Explainable IQA extends quality prediction by incorporating interpretable reasoning about distortions and perceptual attributes. Methods such as CLIP-IQA \cite{wang2023exploring} leverage vision–language models to associate quality with semantic descriptions, while PIQE \cite{venkatanath2015blind} provides rule-based localization of distortions using human vision-inspired heuristics. Although these approaches improve interpretability, they remain computationally demanding or insufficiently adapted to thermal data.
+
+Finally, AIGC-oriented IQA focuses on artifacts specific to generated imagery. For instance, Q-Bench \cite{wu2023q} evaluates multimodal models on their ability to assess synthetic image quality and perceptual consistency. However, these approaches primarily target generative artifacts and do not address real-world degradation patterns observed in thermal sensing.
+
+Overall, while IQA methods have advanced significantly, lightweight and mission-ready frameworks for thermal imagery remain limited. FLIQE addresses this gap by explicitly modeling thermal-specific degradations and enabling efficient binary quality screening for SAR deployment.
+
+
+
+\section{Methodology}
+\label{sec:methodology}
+\subsection{System Architecture}
+The FLIR Image Quality Estimator (FLIQE) employs a two-stage deep learning architecture for assessing thermal image quality. As illustrated in Fig.~\ref{fig:architecture}, the system comprises two main components: (1) a FLIQE Encoder that learns discriminative embeddings for different image quality characteristics, and (2) a Binary Classification Head that predicts quality scores from these embeddings. The architecture processes input thermal images through a frozen ResNet50 backbone, followed by a learnable projection head that produces 128-dimensional embeddings. These embeddings are then passed through a binary classifier that outputs quality scores indicating the likelihood of image distortion.
+
+\subsection{Data Augmentation with Distortion Simulation}
+The FLIQE encoder's projection head was trained using supervised contrastive learning to represent an embedding space where images with similar quality characteristics are positioned close together, while those with differing quality issues are separated. Therefore, to effectively train the projection head, we apply data augmentation and simulate a comprehensive set of distortions as shown in Fig.~\ref{fig:distortions}. The applied distortions follow standard models widely used in image quality assessment and infrared imaging literature \cite{bovik2005handbook, vollmer2017infrared}. These synthetic distortions are designed to reflect image quality degradations, including: 
+\begin{itemize}
+    \item \textit{Optical distortions}: \textbf{Lens blur} to simulate defocus effects caused by improper focusing or depth-of-field limitations, and \textbf{motion blur} to account for camera shake or object motion during exposure.
+    \item \textit{Environmental artifacts}: Thermal sensors are inherently affected by electronic noise and thermal interference. To reflect these effects, we apply additive Gaussian \textbf{noise}, a standard approximation for sensor noise in both visible and infrared imaging systems.
+    \item \textit{Exposure problems}: Incorrect gain or sensitivity settings in thermal cameras often lead to saturation or insufficient contrast. We simulate these conditions through \textbf{overexposure} and \textbf{underexposure} by scaling image intensities.
+    \item \textit{Compression artifacts}: Due to bandwidth and storage constraints, thermal images are frequently compressed before transmission or storage. We simulate \textbf{compression} artifacts using low-quality JPEG encoding, introducing blocking artifacts and intensity banding.
+    \item \textit{Thermal-specific issues}: Artifacts specific to thermal imaging systems, such as ghosting and aliasing. \textbf{Ghosting} is simulated by blending the current frame with a spatially shifted version to reproduce residual heat persistence from previous frames. \textbf{Aliasing} artifacts, common in low-resolution thermal sensors, are modeled via downsampling followed by nearest-neighbor upsampling, resulting in characteristic staircase patterns.
+\end{itemize}
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.8\linewidth]{photos/distorted_frames.png}
+    \caption{Data augmentation with synthetic distortions.}
+    \label{fig:distortions}
+\end{figure}
+
+During encoder's training for distortion-aware quality assessment, the aforementioned nine augmentations are applied to the thermal images. Each training image is augmented with one randomly selected distortion, creating a balanced multi-class dataset for supervised contrastive learning where labels are the nine augmentations. On the other hand, during the binary MLP classifier training, clean images are preserved with a probability of 0.5, while the remaining images are degraded using a single randomly selected distortion. This strategy ensures balanced labeling between pristine and degraded samples that are going to be used for binary classification.
+
+
+\subsection{FLIQE Encoder}
+The FLIQE Encoder learns a discriminative embedding space where images with similar quality characteristics cluster together while dissimilar ones are separated. The encoder's architecture consists of two main components: (1) a frozen ResNet-50 pretrained on ImageNet, and (2) a learnable multi-layer projection head. Input images are resized to $224 \times 224$ pixels, scaled to the [0, 1] range, augmented with distortions and fed into the backbone to produce samples with 2048-dimensional features. 
+\begin{equation}
+\begin{aligned}
+f_{backbone}: \mathbb{R}^{H \times W \times 3} \rightarrow \mathbb{R}^{2048}
+\end{aligned}
+\end{equation}
+The projection head transforms the 2048-dimensional backbone features into a compact 128-dimensional embedding space with halving dimensions at each layer, incorporating batch normalization and ReLU activations between intermediate layers:
+\begin{equation}
+\begin{aligned}
+f_{\text{proj}} : \mathbb{R}^{2048}
+  &\xrightarrow{\text{Lin+BN+ReLU}} \mathbb{R}^{1024} \\
+  &\xrightarrow{\text{Lin+BN+ReLU}} \mathbb{R}^{512} \\
+  &\xrightarrow{\text{Lin+BN+ReLU}} \mathbb{R}^{256} 
+  &\xrightarrow{\text{Lin}} \mathbb{R}^{128}
+\end{aligned}
+\end{equation}
+The final output is L2-normalized to project embeddings onto a unit hypersphere, which is essential for contrastive learning objectives:
+$$z = \frac{f_{proj}(f_{backbone}(x))}{\|f_{proj}(f_{backbone}(x))\|_2}$$
+
+The encoder was trained on the FLIR ADAS v2 thermal image dataset\cite{flir-adas-v2} using supervised contrastive learning, which leverages label information to pull embeddings of the same distortion class together while pushing different classes apart \cite{Khosla2020}. The projection head was optimized with Adam (learning rate $10^{-3}$, batch size $64$) for up to $100$ epochs at a temperature of $\tau=0.07$, with early stopping when the validation loss failed to improve by a margin of $0.05$.
+% Given a batch of $N$ samples with embeddings $\{z_i\}_{i=1}^N$ and labels $\{y_i\}_{i=1}^N$, the supervised contrastive loss is defined as:
+% $$\mathcal{L}_{SupCon} = -\frac{1}{N} \sum_{i=1}^{N} \frac{1}{|P(i)|} \sum_{j \in P(i)} \log \frac{\exp(z_i \cdot z_j / \tau)}{\sum_{k \neq i} \exp(z_i \cdot z_k / \tau)}$$
+% where $P(i) = \{j : y_j = y_i, j \neq i\}$ is the set of positive samples (same class) for anchor $i$, $\tau$ is the temperature parameter (default: 0.07), and $z_i \cdot z_j$ denotes the dot product between normalized embeddings.
+% The temperature parameter $\tau$ controls the concentration of the distribution: lower values create sharper distinctions between positive and negative pairs, while higher values produce smoother gradients.
+% An early stopping criterion was implemented to prevent overfitting as training was terminated when the validation loss failed to improve by a margin of 0.05 for consecutive evaluation epochs.
+Model performance was evaluated on unseen video frames using t-distributed Stochastic Neighbor Embedding (t-SNE) visualization to qualitatively assess the learned embedding space. These video frames were extracted from a private dataset, disjoint from the FLIR ADAS v2 data used to train the encoder, collected using a FLIR Thermal Vision for ADAS and AV Developers (FLIR ADK™) system. The dataset comprises 12 thermal video sequences recorded inside tunnel environments under challenging operational conditions, yielding a total of 80,670 frames after extraction. Data acquisition was performed using ground robots, aerial drones, and static camera setups equipped with FLIR ADK™ sensors, simulating realistic scenarios relevant to Search and Rescue operations, as conducted in the ARCHIMEDES project (see Acknowledgment). The learned feature embeddings were projected into a two-dimensional space using t-SNE, revealing effective separation among different distortion classes, as illustrated in Fig.~\ref{fig:tsne}.
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.8\linewidth]{photos/tsne_distorted_images.png}
+    \caption{Evaluation of the learned embedding space using t-SNE visualization.}
+    \label{fig:tsne}
+\end{figure}
+The contrastive learning approach enabled the model to learn generalizable quality-aware representations that transfer well to unseen thermal imagery, especially in SAR operations.
+
+\subsection{FLIQE Binary Head}
+The FLIQE Binary Head extends the pre-trained IQA Encoder with a binary classification layer designed to distinguish between clean (undistorted) and distorted thermal images. It transforms the encoder's learned embeddings into actionable quality scores. The classifier is implemented as a multi-layer perceptron (MLP) that takes the 128-dimensional embeddings from the frozen encoder and predicts distortion probability. Each hidden layer applies batch normalization and ReLU activation, and the final layer outputs a single logit value:
+\begin{equation}
+\begin{aligned}
+f_{\text{cls}} : \mathbb{R}^{128}
+  &\xrightarrow{\text{Lin+BN+ReLU}} \mathbb{R}^{128} 
+  &\xrightarrow{\text{Lin+BN+ReLU}} \mathbb{R}^{64} 
+  &\xrightarrow{\text{Lin}} \mathbb{R}
+\end{aligned}
+\end{equation}
+
+The classifier was trained on the private thermal dataset of 80,670 frames described above---disjoint from the FLIR ADAS v2 set used to train the encoder---using the Binary Cross-Entropy with Logits loss. The frames were partitioned into a training set of 64,536 frames (80\%) and a held-out evaluation set of 16,134 frames (20\%), with the evaluation frames drawn from recordings of different physical locations than those used for training to limit adjacent-frame correlation. Training used Adam (learning rate $10^{-3}$, batch size $64$) for up to $100$ epochs, decaying the learning rate by a factor of $0.95$ on validation plateaus and stopping after $10$ epochs without improvement.
+% $$\mathcal{L}_{BCE} = -\frac{1}{N} \sum_{i=1}^{N} \left[ y_i \log(\sigma(l_i)) + (1 - y_i) \log(1 - \sigma(l_i)) \right]$$
+% where $l_i$ is the output logit for sample $i$, $y_i \in \{0, 1\}$ is the binary label (0 for clean, 1 for distorted), and $\sigma(\cdot)$ is the sigmoid function.
+% An early stopping mechanism monitored validation loss, halting training after 10 consecutive epochs without improvement. Upon detecting a plateau, the learning rate was multiplicatively decayed by a factor of 0.95 to facilitate finer convergence.
+Model performance was assessed using the following metrics computed on the held-out evaluation set:
+\begin{itemize}
+    \item \textit{Accuracy}: Proportion of correctly classified samples
+    \item \textit{Precision}: True positives divided by predicted positives, measuring distortion detection reliability
+    \item \textit{Recall}: True positives divided by actual positives, measuring distortion detection sensitivity
+    \item \textit{F1-Score}: Harmonic mean of precision and recall, providing a balanced performance measure
+\end{itemize}
+Classification predictions were obtained by applying a sigmoid activation to model logits and thresholding at 0.5.
+Finally, training and validation losses were recorded per epoch and visualized to assess convergence behavior and detect potential overfitting. The gap between training and validation loss curves, as indicated in Fig.~\ref{fig:loss_curves}, provided insight into model generalization capability across unseen thermal imagery.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.8\linewidth]{photos/output.png}
+    \caption{Training and validation loss curves.}
+    \label{fig:loss_curves}
+\end{figure}
+
+During inference, the raw logits are transformed into interpretable quality scores. First, we compute the distortion probability using the sigmoid function:
+$$P(distortion) = \sigma(l) = \frac{1}{1 + e^{-l}}$$
+The final quality score is computed as the complement of the distortion probability, ensuring that higher scores correspond to better image quality:
+$$Q = 1 - P(distortion)$$
+This yields quality scores in the range $[0, 1]$, where $Q \approx 1$ indicates high-quality (clean) images and $Q \approx 0$ indicates severely distorted images.
+
+\subsection{Online Quality Estimation}
+For real-time video quality monitoring applications, FLIQE provides an online estimation module that computes temporally smoothed quality scores. The `OnlineFLIQE` class extends the base FLIQE functionality with session management capabilities. Each session is identified by a unique string identifier, allowing simultaneous monitoring of multiple video streams, and maintains:
+\begin{itemize}
+    \item A bounded queue of recent quality scores with maximum length equal to the smoothing window size.
+    \item A running smoothed average computed over the stored scores.
+\end{itemize}
+For each incoming frame, the raw quality score $Q_t$ is computed and appended to the session's score buffer. The smoothed quality score is then calculated as the arithmetic mean over the buffer contents:
+$$\bar{Q}_t = \frac{1}{\min(t, W)} \sum_{i=\max(1, t-W+1)}^{t} Q_i$$
+where $W$ is the smoothing window size (default: 300 frames) and $t$ is the current frame index.
+This moving average approach provides several benefits:
+\begin{enumerate}
+    \item \textbf{Noise Reduction}: Transient quality fluctuations are smoothed out, providing more stable readings.
+    \item \textbf{Trend Detection}: Gradual quality degradation becomes more apparent.
+    \item \textbf{Configurable Sensitivity}: The window size can be adjusted based on application requirements—smaller windows provide faster response to quality changes, while larger windows offer more stable estimates.
+\end{enumerate}
+The smoothed score converges to the true average quality as the buffer fills, with the system reaching steady-state behavior after $W$ frames have been processed.
+The training and implementation of FLIQE modules are publicly available at this \href{https://github.com/icsa-hua/FLir-Image-Quality-Estimator}{GitHub repository}.
+
+
+\section{Results}
+\label{sec:results}
+\subsection{Experimental Setup}
+The evaluation framework employed the FLIR ADAS v2 thermal image dataset, with 10,742 images used for calibration (training) and 1,144 images reserved for evaluation. This benchmark set is independent of the private SAR frames used to train the FLIQE binary head; the reported scores therefore also reflect cross-dataset generalization, with the calibration split used only to fit each method's decision mapping and the held-out split to compute all metrics. Nine distortion types were applied to simulate real-world quality degradation: clean (undistorted), lens blur, motion blur, Gaussian noise, overexposure, underexposure, compression artifacts, ghosting, and aliasing. Images were classified as either distorted (label 1) or clean (label 0), framing quality assessment as a binary classification task.
+FLIQE was benchmarked against eight widely-used NR-IQA algorithms spanning both statistical and deep learning approaches:
+\begin{itemize}
+    \item \textbf{Statistical methods}: BRISQUE, NIQE, and PIQE
+    \item \textbf{Deep learning methods}: ARNIQA, PAQ2PIQ, MUSIQ, DBCNN, and CLIPIQA
+\end{itemize}
+To ensure fair comparison across methods with different output score ranges and polarities, Platt scaling via logistic regression was applied to calibrate each algorithm's raw quality scores into probability estimates using the training set. A threshold of 0.5 was used to convert calibrated probabilities into binary predictions on the evaluation set.
+The experimental implementation is publicly available at this \href{https://github.com/icsa-hua/FLir-Image-Quality-Estimator}{GitHub repository} \footnote{\url{https://github.com/icsa-hua/FLir-Image-Quality-Estimator}}.
+
+\subsection{Analysis of Results}
+\begin{table}[t]
+\centering
+\begin{tabular}{lcccc}
+\hline
+Algorithm & Accuracy & Precision & Recall & F1-Score \\
+\hline
+\textbf{FLIQE} & \textbf{0.859} & \textbf{0.898} & \textbf{0.773} & \textbf{0.831} \\
+BRISQUE  & 0.821 & 0.887 & 0.688 & 0.774 \\
+ARNIQA   & 0.810 & 0.813 & 0.748 & 0.779 \\
+PIQE     & 0.792 & 0.883 & 0.617 & 0.726 \\
+NIQE     & 0.789 & 0.814 & 0.686 & 0.744 \\
+PAQ2PIQ  & 0.743 & 0.752 & 0.635 & 0.689 \\
+DBCNN    & 0.736 & 0.717 & 0.678 & 0.697 \\
+MUSIQ    & 0.729 & 0.713 & 0.660 & 0.686 \\
+CLIPIQA  & 0.716 & 0.700 & 0.639 & 0.668 \\
+\hline
+\\
+\end{tabular}
+\caption{Binary classification performance for IQA algorithms.}
+\label{tab:binary_iqa_results}
+\end{table}
+Table~\ref{tab:binary_iqa_results} summarizes the classification performance across all evaluated algorithms.
+FLIQE achieved the highest performance across all evaluated metrics, with an F1-score of 0.831 representing a 5.2 percentage point improvement over the next best method (ARNIQA at 0.779). The accuracy of 0.859 demonstrates FLIQE's superior ability to discriminate between distorted and clean thermal images. Among general-purpose methods, statistical approaches (BRISQUE, NIQE, PIQE) exhibited competitive performance against several deep learning methods on thermal imagery. BRISQUE achieved the second-highest accuracy (0.821), suggesting that hand-crafted natural scene statistics remain effective for thermal image quality assessment. However, deep learning methods trained on natural images (MUSIQ, DBCNN, CLIPIQA) showed degraded performance, likely due to domain mismatch between their training data and thermal image characteristics.
+
+FLIQE achieved the highest precision (0.898) while maintaining competitive recall (0.773). Methods such as PIQE and BRISQUE achieved high precision (0.883 and 0.887, respectively) but suffered from substantially lower recall (0.617 and 0.688), indicating a tendency toward conservative distortion detection. ARNIQA demonstrated the most balanced precision-recall trade-off among comparison methods (0.813/0.748), though both metrics remained below FLIQE's performance.
+
+The performance gap between FLIQE and general-purpose methods underscores the importance of domain-specific training for thermal image quality assessment. In SAR operations, recall is often the most critical metric, as failing to detect a degraded image may lead to missed targets or unsafe operational decisions; it is generally preferable to flag a questionable frame for inspection than to accept a degraded one as clean. FLIQE attains the highest recall among the top-performing methods (0.773) while maintaining the highest precision (0.898), and its superior F1-score reflects this balance---prioritizing distortion detection without an excessive increase in false alarms, in line with the reliability and sensitivity demanded by SAR missions.
+
+
+\section{Conclusion and Future Directions}
+\label{sec:conclusion}
+The problem of ensuring reliable perception in SAR environments through robust thermal-image quality assessment was examined in this work. To address this challenge, a thermal-domain adaptation of the FLIQE framework was developed and evaluated under a range of adverse conditions. The proposed approach—combining a frozen ResNet-50 encoder, an adaptive projection head, and an efficient binary quality estimator—enables real-time and reliable assessment of thermal image integrity when exposed to smoke, reduced visibility, noise, and sensor irregularities. Experimental findings demonstrated that the method provides stable and robust quality predictions, effectively preventing corrupted inputs from propagating into downstream perception modules. These results underscore the value of integrating automated thermal-image quality assessment into autonomous SAR pipelines to enhance perception reliability and overall operational safety.
+
+\textbf{Limitations.} Several limitations should be noted. First, both training and evaluation rely on synthetically generated distortions; although these follow established IQA and infrared imaging degradation models, real SAR conditions may produce more complex or compound artifacts not fully captured here, and validation on real degraded operational footage remains open. Second, regarding data partitioning, the private evaluation frames were recorded at different locations than the training frames, and the comparative benchmark in Table~\ref{tab:binary_iqa_results} is performed on the independent FLIR ADAS v2 dataset, together precluding train--test overlap. Third, although FLIQE targets on-board deployment through a frozen ResNet-50 backbone and compact 128-D embeddings with lightweight MLP heads, a detailed runtime profile (latency, throughput, memory) on embedded hardware has not yet been established.
+
+Several avenues for future work emerge from this study. A primary direction involves validating the framework on larger and more diverse real-world thermal datasets to examine generalization across sensor types and environmental conditions. Expanding the degradation model to incorporate additional thermal-specific phenomena—such as dynamic heating effects, optics contamination, and atmospheric attenuation—could help narrow the gap between synthetic distortions and those encountered in practice. Integrating the quality assessment module into closed-loop autonomy architectures may further enable UAVs and ground robots to adapt their behaviour based on real-time perception quality feedback. Additionally, multimodal extensions, such as RGB–thermal or LiDAR–thermal fusion, could provide richer robustness cues for mission-critical decision-making. Finally, exploring lightweight foundation-model encoders or self-supervised pretraining strategies may improve performance while retaining suitability for embedded platforms.
+
+
+\section*{Acknowledgment}
+ARCHIMEDES is supported by the Chips Joint Undertaking and its members, including the top-up funding by National Authorities under Grant Agreement No 101112295.
+
+
+\bibliographystyle{IEEEtran}
+\bibliography{references}
+
+\end{document}
