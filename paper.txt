@@ -1,7 +1,12 @@
-\documentclass[conference]{IEEEtran}
+\documentclass[conference,a4paper]{IEEEtran}
 \IEEEoverridecommandlockouts
 % The preceding line is only needed to identify funding in the first footnote. If that is unneeded, please comment it out.
 %Template version as of 6/27/2024
+
+% A4 margin requirements: sides >= 1.57 cm, top >= 1.9 cm, bottom >= 2.54 cm (1 in).
+% Values below carry ~1 mm of slack over each minimum. Text block: 17.7 x 25.0 cm.
+% Must be loaded before hyperref.
+\usepackage[a4paper, top=2.0cm, bottom=2.7cm, left=1.65cm, right=1.65cm]{geometry}
 
 \usepackage{cite}
 \usepackage{amsmath,amssymb,amsfonts}
@@ -18,8 +23,7 @@
 \def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
     T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
 
-% Fix margins: top >= 0.75 in, bottom >= 1.0 in, gutter >= 0.24 in
-\usepackage[top=0.75in, bottom=1.1in, left=0.625in, right=0.625in, columnsep=0.25in]{geometry}
+% (geometry is loaded near the top, before hyperref)
 
 \begin{document}
 
@@ -179,7 +183,7 @@ The encoder was trained on the FLIR ADAS v2 thermal image dataset\cite{flir-adas
 % where $P(i) = \{j : y_j = y_i, j \neq i\}$ is the set of positive samples (same class) for anchor $i$, $\tau$ is the temperature parameter (default: 0.07), and $z_i \cdot z_j$ denotes the dot product between normalized embeddings.
 % The temperature parameter $\tau$ controls the concentration of the distribution: lower values create sharper distinctions between positive and negative pairs, while higher values produce smoother gradients.
 % An early stopping criterion was implemented to prevent overfitting as training was terminated when the validation loss failed to improve by a margin of 0.05 for consecutive evaluation epochs.
-Model performance was evaluated on unseen video frames using t-distributed Stochastic Neighbor Embedding (t-SNE) visualization to qualitatively assess the learned embedding space. These video frames were extracted from a private dataset, disjoint from the FLIR ADAS v2 data used to train the encoder, collected using a FLIR Thermal Vision for ADAS and AV Developers (FLIR ADK™) system. The dataset comprises 12 thermal video sequences recorded inside tunnel environments under challenging operational conditions, yielding a total of 80,670 frames after extraction. Data acquisition was performed using ground robots, aerial drones, and static camera setups equipped with FLIR ADK™ sensors, simulating realistic scenarios relevant to Search and Rescue operations, as conducted in the ARCHIMEDES project (see Acknowledgment). The learned feature embeddings were projected into a two-dimensional space using t-SNE, revealing effective separation among different distortion classes, as illustrated in Fig.~\ref{fig:tsne}.
+Model performance was evaluated on unseen video frames using t-distributed Stochastic Neighbor Embedding (t-SNE) visualization to qualitatively assess the learned embedding space. These video frames were extracted from a private dataset, disjoint from the FLIR ADAS v2 data used to train the encoder, collected using a FLIR Thermal Vision for ADAS and AV Developers (FLIR ADK™) system. The dataset comprises 12 thermal video sequences recorded inside tunnel environments under challenging operational conditions, yielding a total of 80,670 frames after extraction. Data acquisition was performed using ground robots, aerial drones, and static camera setups equipped with FLIR ADK™ sensors, simulating realistic scenarios relevant to Search and Rescue operations. The learned feature embeddings were projected into a two-dimensional space using t-SNE, revealing effective separation among different distortion classes, as illustrated in Fig.~\ref{fig:tsne}.
 \begin{figure}[h]
     \centering
     \includegraphics[width=0.8\linewidth]{photos/tsne_distorted_images.png}
@@ -297,7 +301,7 @@ Several avenues for future work emerge from this study. A primary direction invo
 
 
 \section*{Acknowledgment}
-ARCHIMEDES is supported by the Chips Joint Undertaking and its members, including the top-up funding by National Authorities under Grant Agreement No 101112295.
+Research leading to these results has received funding from the EU Horizon Europe research and innovation program, KDT Joint Undertaking, under grant agreement no. 101112065 (project EECONE) and from the partners national funding authorities, Greek Ministry of Education and Religious Affairs on behalf of Harokopio University.
 
 
 \bibliographystyle{IEEEtran}
